@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0E1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Controle Financeiro</title>
+<style>
+:root{
+  --bg:#0E1014; --surface:#171A21; --surface2:#1F2430; --surface3:#272D3A;
+  --border:#2C3340; --text:#EDF0F6; --muted:#9AA3B2; --faint:#6B7383;
+  --primary:#6366F1; --primary-soft:rgba(99,102,241,.16); --primary-ink:#fff;
+  --pix:#00B8A9; --pix-soft:rgba(0,184,169,.16);
+  --pos:#34D399; --neg:#F87171; --warn:#FBBF24;
+  --r:16px; --r-sm:11px; --r-pill:999px;
+  --shadow:0 8px 28px rgba(0,0,0,.45);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono","JetBrains Mono",Menlo,Consolas,monospace;
+}
+html[data-theme="light"]{
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface2:#F2F4F8; --surface3:#E8EBF1;
+  --border:#E0E4EC; --text:#10141C; --muted:#586172; --faint:#8A93A2;
+  --primary-soft:rgba(99,102,241,.12);
+  --pix-soft:rgba(0,184,169,.12);
+  --pos:#059669; --neg:#DC2626; --warn:#D97706;
+  --shadow:0 8px 24px rgba(20,30,50,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  font-size:15px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+.num{font-family:var(--mono); font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+input,select,textarea{font-family:inherit; font-size:16px; color:var(--text)}
+input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--primary); outline-offset:1px}
+
+/* layout */
+#app{max-width:520px; margin:0 auto; min-height:100vh; min-height:100dvh; padding-bottom:calc(70px + env(safe-area-inset-bottom)); position:relative}
+.topbar{
+  position:sticky; top:0; z-index:30; background:rgba(14,16,20,.82);
+  backdrop-filter:saturate(140%) blur(14px); -webkit-backdrop-filter:saturate(140%) blur(14px);
+  border-bottom:1px solid var(--border); padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+}
+html[data-theme="light"] .topbar{background:rgba(244,246,249,.85)}
+.topbar h1{margin:0; font-size:19px; font-weight:760; letter-spacing:-.02em}
+.topbar .sub{color:var(--muted); font-size:12.5px; margin-top:1px}
+.topbar-row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+
+.monthnav{display:flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-pill); padding:3px}
+.monthnav button{width:32px; height:32px; border-radius:50%; display:grid; place-items:center; color:var(--muted); font-size:17px}
+.monthnav button:active{background:var(--surface3)}
+.monthnav .mlabel{min-width:108px; text-align:center; font-weight:650; font-size:13.5px; text-transform:capitalize}
+
+main{padding:16px 16px 8px}
+.section{margin-bottom:22px}
+.section-h{display:flex; align-items:center; justify-content:space-between; margin:0 2px 10px}
+.section-h h2{margin:0; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted)}
+.linkbtn{color:var(--primary); font-weight:650; font-size:13px; display:inline-flex; align-items:center; gap:4px}
+
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px}
+.card + .card{margin-top:10px}
+
+/* hero total */
+.hero{padding:20px 18px; background:linear-gradient(160deg,var(--surface),var(--surface2)); border:1px solid var(--border); border-radius:var(--r); position:relative; overflow:hidden}
+.hero .lbl{color:var(--muted); font-size:12.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em}
+.hero .big{font-size:34px; font-weight:800; margin-top:4px; line-height:1.05}
+.hero .splitrow{display:flex; gap:18px; margin-top:14px}
+.hero .splitrow .si{flex:1}
+.hero .splitrow .si .k{font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:5px; font-weight:600}
+.hero .splitrow .si .v{font-size:17px; font-weight:700; margin-top:2px}
+.dot{width:9px; height:9px; border-radius:50%; display:inline-block; flex:none}
+
+/* card chips */
+.chiprow{display:flex; flex-direction:column; gap:9px}
+.cchip{display:flex; align-items:center; gap:13px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-sm); padding:13px 14px; width:100%; text-align:left; position:relative; overflow:hidden}
+.cchip:active{background:var(--surface2)}
+.cchip .bar{position:absolute; left:0; top:0; bottom:0; width:5px}
+.cchip .ico{width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:18px; flex:none; color:#fff; font-weight:700}
+.cchip .meta{flex:1; min-width:0}
+.cchip .meta .nm{display:block; font-weight:680; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cchip .meta .dt{display:block; font-size:11.5px; color:var(--muted); margin-top:3px}
+.cchip .amt{text-align:right; flex:none}
+.cchip .amt .v{font-weight:720; font-size:15.5px}
+.cchip .amt .s{font-size:10.5px; color:var(--faint)}
+.cchip .chev{color:var(--faint); font-size:16px; margin-left:2px}
+
+/* posting list */
+.plist{margin-top:2px; border-top:1px dashed var(--border)}
+.prow{display:flex; align-items:center; gap:11px; padding:11px 2px; border-bottom:1px solid var(--border)}
+.prow:last-child{border-bottom:none}
+.prow .em{width:32px; height:32px; border-radius:9px; background:var(--surface2); display:grid; place-items:center; font-size:15px; flex:none}
+.prow .pm{flex:1; min-width:0}
+.prow .pm .t{display:block; font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.prow .pm .d{display:block; font-size:11.5px; color:var(--muted); margin-top:2px}
+.prow .pv{font-weight:680; font-size:14px; flex:none; white-space:nowrap}
+.tag{font-size:10px; font-weight:700; padding:2px 7px; border-radius:var(--r-pill); text-transform:uppercase; letter-spacing:.03em}
+.tag.card{background:var(--primary-soft); color:var(--primary)}
+.tag.pix{background:var(--pix-soft); color:var(--pix)}
+
+/* category bars */
+.catbar{display:flex; align-items:center; gap:11px; padding:9px 0}
+.catbar .em{font-size:18px; width:26px; text-align:center; flex:none}
+.catbar .cb{flex:1; min-width:0}
+.catbar .cb .cl{display:flex; justify-content:space-between; gap:10px; font-size:13px; margin-bottom:5px}
+.catbar .cb .cl .nm{font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.catbar .cb .cl .vv{font-weight:680; flex:none; white-space:nowrap}
+.catbar .track{height:7px; background:var(--surface3); border-radius:var(--r-pill); overflow:hidden}
+.catbar .fill{height:100%; border-radius:var(--r-pill)}
+
+/* invest */
+.bankcard{background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:12px}
+.bankhead{display:flex; align-items:center; gap:12px; padding:14px 15px; position:relative}
+.bankhead .bar{position:absolute; left:0; top:0; bottom:0; width:5px}
+.bankhead .ico{width:38px; height:38px; border-radius:10px; display:grid; place-items:center; color:#fff; font-weight:800; font-size:16px; flex:none}
+.bankhead .bm{flex:1; min-width:0}
+.bankhead .bm .nm{display:block; font-weight:720; font-size:15.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.bankhead .bm .sub{display:block; font-size:11.5px; color:var(--muted); margin-top:2px}
+.bankhead .bt{text-align:right; flex:none}
+.bankhead .bt .v{font-weight:760; font-size:16px}
+.prod{border-top:1px solid var(--border); padding:13px 15px}
+.prod .ptop{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.prod .pname{font-weight:650; font-size:14.5px; display:flex; align-items:center; gap:7px; min-width:0}
+.prod .pname .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.prod .pflags{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
+.flag{font-size:10.5px; color:var(--muted); background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-pill); padding:2px 8px; display:inline-flex; align-items:center; gap:4px}
+.flag b{color:var(--text); font-weight:680; font-family:var(--mono)}
+.balrow{display:flex; align-items:center; gap:10px; margin-top:11px}
+.balrow .blbl{font-size:11.5px; color:var(--muted); flex:none}
+.balinput{flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 11px; font-family:var(--mono); font-weight:650; font-size:15px; text-align:right}
+.delta{font-size:11.5px; font-weight:700; font-family:var(--mono); flex:none; min-width:64px; text-align:right}
+.delta.pos{color:var(--pos)} .delta.neg{color:var(--neg)} .delta.zero{color:var(--faint)}
+
+/* generic list rows (cards/categories admin) */
+.adminrow{display:flex; align-items:center; gap:13px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-sm); padding:13px 14px; margin-bottom:9px}
+.adminrow .sw{width:42px; height:42px; border-radius:11px; display:grid; place-items:center; color:#fff; font-weight:700; font-size:18px; flex:none}
+.adminrow .am{flex:1; min-width:0}
+.adminrow .am .nm{display:block; font-weight:650; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.adminrow .am .sub{display:block; font-size:11.5px; color:var(--muted); margin-top:3px}
+.iconbtn{width:34px; height:34px; border-radius:9px; background:var(--surface2); display:grid; place-items:center; color:var(--muted); font-size:15px; flex:none}
+.iconbtn:active{background:var(--surface3)}
+
+/* buttons */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 16px; border-radius:var(--r-sm); font-weight:680; font-size:15px; background:var(--surface2); border:1px solid var(--border)}
+.btn:active{transform:scale(.985)}
+.btn.primary{background:var(--primary); color:var(--primary-ink); border-color:transparent}
+.btn.full{width:100%}
+.btn.sm{padding:9px 13px; font-size:13.5px; border-radius:9px}
+.btn.danger{color:var(--neg)}
+.btn.ghost{background:transparent}
+.addbtn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:14px; border-radius:var(--r-sm); border:1.5px dashed var(--border); color:var(--muted); font-weight:650; font-size:14.5px; background:transparent}
+.addbtn:active{background:var(--surface2)}
+
+/* empty */
+.empty{text-align:center; padding:34px 20px; color:var(--muted)}
+.empty .ee{font-size:38px; margin-bottom:10px}
+.empty .et{font-weight:680; color:var(--text); font-size:15.5px; margin-bottom:4px}
+.empty .ed{font-size:13.5px; max-width:280px; margin:0 auto 14px}
+
+/* fab */
+.fab{position:fixed; right:max(16px,calc((100vw - 520px)/2 + 16px)); bottom:calc(78px + env(safe-area-inset-bottom)); width:56px; height:56px; border-radius:18px; background:var(--primary); color:#fff; font-size:27px; display:grid; place-items:center; box-shadow:0 8px 22px rgba(99,102,241,.45); z-index:40}
+.fab:active{transform:scale(.94)}
+
+/* tabbar */
+.tabbar{position:fixed; bottom:0; left:0; right:0; z-index:35; display:flex; background:rgba(14,16,20,.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-top:1px solid var(--border); padding-bottom:env(safe-area-inset-bottom)}
+html[data-theme="light"] .tabbar{background:rgba(255,255,255,.92)}
+.tabbar .inner{max-width:520px; margin:0 auto; width:100%; display:flex}
+.tab{flex:1; padding:9px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--faint); font-size:10.5px; font-weight:600}
+.tab .ti{font-size:21px; line-height:1}
+.tab.active{color:var(--primary)}
+.tab svg{width:23px; height:23px; stroke-width:1.9; fill:none; stroke:currentColor}
+
+/* modal sheet */
+.overlay{position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .22s}
+.overlay.show{opacity:1; pointer-events:auto}
+.sheet{position:fixed; left:0; right:0; bottom:0; z-index:51; max-width:520px; margin:0 auto; background:var(--surface); border-radius:22px 22px 0 0; transform:translateY(100%); transition:transform .26s cubic-bezier(.32,.72,0,1); max-height:92vh; max-height:92dvh; display:flex; flex-direction:column; box-shadow:var(--shadow)}
+.sheet.show{transform:translateY(0)}
+.sheet .grab{width:38px; height:4px; border-radius:2px; background:var(--surface3); margin:10px auto 2px}
+.sheet .shead{display:flex; align-items:center; justify-content:space-between; padding:8px 18px 12px; border-bottom:1px solid var(--border)}
+.sheet .shead h3{margin:0; font-size:17px; font-weight:740}
+.sheet .sbody{padding:16px 18px calc(20px + env(safe-area-inset-bottom)); overflow-y:auto; -webkit-overflow-scrolling:touch}
+.closex{width:32px; height:32px; border-radius:50%; background:var(--surface2); display:grid; place-items:center; color:var(--muted); font-size:16px}
+
+/* form */
+.field{margin-bottom:15px}
+.field > label{display:block; font-size:12.5px; font-weight:650; color:var(--muted); margin-bottom:7px}
+.field input[type=text],.field input[type=number],.field input[type=date],.field select,.field textarea{
+  width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); padding:12px 13px; font-size:16px;
+}
+.field input[type=date]{min-height:46px}
+.field .hint{font-size:11.5px; color:var(--faint); margin-top:6px}
+.seg{display:flex; gap:7px; background:var(--surface2); border:1px solid var(--border); padding:4px; border-radius:var(--r-sm)}
+.seg button{flex:1; padding:10px; border-radius:8px; font-weight:650; font-size:14px; color:var(--muted)}
+.seg button.on{background:var(--primary); color:#fff}
+.seg.pixseg button.on{background:var(--pix)}
+.row2{display:flex; gap:11px}
+.row2 > *{flex:1; min-width:0}
+.swatches{display:flex; flex-wrap:wrap; gap:9px; margin-top:3px}
+.swatch{width:34px; height:34px; border-radius:10px; position:relative; border:2px solid transparent}
+.swatch.sel{border-color:var(--text)}
+.swatch.sel::after{content:"✓"; position:absolute; inset:0; display:grid; place-items:center; color:#fff; font-size:14px; font-weight:800; text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.swatch.addcolor{overflow:hidden; background:var(--surface3)}
+.swatch.addcolor::before{content:"🎨"; position:absolute; inset:0; display:grid; place-items:center; font-size:15px}
+.swatch.addcolor.sel::before{content:""}
+.swatch.addcolor input[type=color]{position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; padding:0; margin:0; cursor:pointer}
+.hrs{font-family:var(--mono); color:var(--faint); font-weight:600; letter-spacing:-.01em}
+.emojipick{display:flex; flex-wrap:wrap; gap:7px; margin-top:8px}
+.emojipick button{width:38px; height:38px; border-radius:10px; background:var(--surface2); border:1px solid var(--border); font-size:19px}
+.emojipick button.on{border-color:var(--primary); background:var(--primary-soft)}
+.toggle{display:flex; align-items:center; justify-content:space-between; padding:13px 0}
+.toggle .tl{font-weight:600; font-size:14.5px}
+.toggle .td{font-size:11.5px; color:var(--muted); margin-top:1px}
+.switch{width:48px; height:28px; border-radius:14px; background:var(--surface3); position:relative; flex:none; transition:background .18s}
+.switch.on{background:var(--primary)}
+.switch::after{content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:transform .18s}
+.switch.on::after{transform:translateX(20px)}
+.divline{height:1px; background:var(--border); margin:14px 0}
+
+/* toast */
+#toast-root{position:fixed; left:0; right:0; bottom:calc(86px + env(safe-area-inset-bottom)); z-index:80; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none}
+.toast{background:var(--surface3); color:var(--text); border:1px solid var(--border); padding:11px 16px; border-radius:var(--r-pill); font-size:13.5px; font-weight:600; box-shadow:var(--shadow); max-width:90%; opacity:0; transform:translateY(8px); transition:.2s}
+.toast.show{opacity:1; transform:translateY(0)}
+.toast.ok{border-color:var(--pos)} .toast.err{border-color:var(--neg)}
+
+/* misc */
+.mutetxt{color:var(--muted); font-size:13.5px}
+.pill{display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:var(--r-pill); background:var(--surface2); border:1px solid var(--border); font-size:12.5px; font-weight:600}
+.statusdot{width:8px; height:8px; border-radius:50%}
+.menuitem{display:flex; align-items:center; gap:13px; padding:15px 4px; border-bottom:1px solid var(--border); width:100%; text-align:left}
+.menuitem:last-child{border-bottom:none}
+.menuitem .mi{width:38px; height:38px; border-radius:10px; background:var(--surface2); display:grid; place-items:center; font-size:18px; flex:none}
+.menuitem .mt{flex:1; min-width:0}
+.menuitem .mt .a{display:block; font-weight:650; font-size:15px}
+.menuitem .mt .b{display:block; font-size:12px; color:var(--muted); margin-top:2px}
+.menuitem .chev{color:var(--faint); font-size:16px}
+.backlink{display:inline-flex; align-items:center; gap:6px; color:var(--primary); font-weight:650; font-size:14px; margin-bottom:4px}
+.note{background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); padding:12px 13px; font-size:12.5px; color:var(--muted); line-height:1.5}
+.note b{color:var(--text)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar" id="topbar"></header>
+  <main id="view"></main>
+</div>
+<button class="fab" id="fab" aria-label="Adicionar gasto">+</button>
+<nav class="tabbar"><div class="inner" id="tabbar"></div></nav>
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div class="shead" id="shead"></div><div class="sbody" id="sbody"></div></div>
+<div id="toast-root"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   Controle Financeiro — app de página única
+   ============================================================ */
+const APP_VERSION = "1.1";
+const DRIVE_FILENAME = "controle-financeiro-backup.json";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+
+/* ---------- storage (localStorage com fallback em memória) ---------- */
+const Store = (()=>{
+  let mem = {}; let usable = true;
+  try{ const k="__cf_test__"; localStorage.setItem(k,"1"); localStorage.removeItem(k); }
+  catch(e){ usable=false; }
+  return {
+    usable,
+    get(k){ try{ return usable? localStorage.getItem(k) : (k in mem? mem[k]:null);}catch(e){ return k in mem? mem[k]:null; } },
+    set(k,v){ try{ if(usable) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } },
+  };
+})();
+
+/* ---------- state ---------- */
+const KEY = "controle_financeiro_v1";
+let state = null;
+
+function defaultState(){
+  return {
+    version: 1,
+    cards: [],
+    categories: [
+      {id:uid(), name:"Mercado", emoji:"🛒"},
+      {id:uid(), name:"Restaurante", emoji:"🍽️"},
+      {id:uid(), name:"Transporte", emoji:"🚗"},
+      {id:uid(), name:"Moradia", emoji:"🏠"},
+      {id:uid(), name:"Saúde", emoji:"💊"},
+      {id:uid(), name:"Lazer", emoji:"🎮"},
+      {id:uid(), name:"Assinaturas", emoji:"🔁"},
+      {id:uid(), name:"Outros", emoji:"📦"},
+    ],
+    expenses: [],
+    banks: [],
+    products: [],
+    settings: { cdiAnnual: 14.9, driveClientId:"", theme:"dark", defaultCardId:null, netSalary:0, hoursPerWeek:0 },
+    ui: { tab:"painel", month: ymKey(new Date().getFullYear(), new Date().getMonth()+1),
+          investMonth: ymKey(new Date().getFullYear(), new Date().getMonth()+1), more:"root", openCard:null }
+  };
+}
+function loadState(){
+  const raw = Store.get(KEY);
+  if(raw){
+    try{ state = JSON.parse(raw); }catch(e){ state = defaultState(); }
+  } else { state = defaultState(); }
+  // migrações leves / defaults
+  state.cards ||= []; state.categories ||= []; state.expenses ||= [];
+  state.banks ||= []; state.products ||= [];
+  state.settings ||= {}; if(state.settings.cdiAnnual==null) state.settings.cdiAnnual=14.9;
+  state.settings.driveClientId ||= ""; state.settings.theme ||= "dark";
+  if(state.settings.defaultCardId===undefined) state.settings.defaultCardId=null;
+  if(state.settings.netSalary==null) state.settings.netSalary=0;
+  if(state.settings.hoursPerWeek==null) state.settings.hoursPerWeek=0;
+  // cartão principal deve apontar para um cartão existente
+  if(state.settings.defaultCardId && !state.cards.some(c=>c.id===state.settings.defaultCardId)) state.settings.defaultCardId=null;
+  if(!state.settings.defaultCardId && state.cards.length) state.settings.defaultCardId=state.cards[0].id;
+  state.ui ||= {}; state.ui.tab ||= "painel";
+  state.ui.month ||= ymKey(new Date().getFullYear(), new Date().getMonth()+1);
+  state.ui.investMonth ||= state.ui.month; state.ui.more ||= "root";
+}
+function save(){ Store.set(KEY, JSON.stringify(state)); }
+
+/* ---------- utils ---------- */
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---------- dinheiro: máscara "centavos primeiro" ---------- */
+function fmtMoneyInput(cents){ return (cents/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function moneyToNum(s){ const d=String(s==null?"":s).replace(/\D/g,""); return d?parseInt(d,10)/100:0; }
+function moneyToNumOrNull(s){ const d=String(s==null?"":s).replace(/\D/g,""); return d?parseInt(d,10)/100:null; }
+function moneyInitVal(n){ return (n!=null && !isNaN(n))? fmtMoneyInput(Math.round(n*100)) : ""; }
+function maskMoneyEl(el){ const d=(el.value||"").replace(/\D/g,""); el.value = d? fmtMoneyInput(parseInt(d,10)) : ""; }
+
+/* ---------- horas trabalhadas ---------- */
+function hourlyRate(){ const s=state.settings||{}; if(s.netSalary>0 && s.hoursPerWeek>0) return s.netSalary/(s.hoursPerWeek*(52/12)); return 0; }
+function fmtHours(h){ if(!(h>0)) return "0h"; const t=Math.round(h*60); const H=Math.floor(t/60), M=t%60; return H+"h"+(M?String(M).padStart(2,"0"):""); }
+function hoursOf(v){ const r=hourlyRate(); return r>0? v/r : null; }
+function hoursLine(v){ const h=hoursOf(v); return h==null?"":`<div class="hrs" style="font-size:12px;margin-top:4px">≈ ${fmtHours(h)} de trabalho</div>`; }
+function hoursBadge(v){ const h=hoursOf(v); return h==null?"":`<span class="hrs" style="font-size:10.5px;display:block;margin-top:2px">≈ ${fmtHours(h)}</span>`; }
+
+/* ---------- datas ---------- */
+function dayBeforeStr(s){ const {y,m,d}=parseYMD(s); const dt=new Date(y,m-1,d-1); return ymd(dt.getFullYear(),dt.getMonth()+1,dt.getDate()); }
+
+function clamp2(n){ return Math.round((n+Number.EPSILON)*100)/100; }
+const BRL = new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+function fmt(n){ return BRL.format(n||0); }
+function fmtShort(n){
+  n=n||0; const a=Math.abs(n);
+  if(a>=1000000) return (n<0?"-":"")+"R$ "+(a/1000000).toFixed(a>=10000000?0:1).replace(".",",")+"M";
+  if(a>=10000) return (n<0?"-":"")+"R$ "+(a/1000).toFixed(0)+"k";
+  return fmt(n);
+}
+function pct(n){ return (n>=0?"+":"")+n.toFixed(1).replace(".",",")+"%"; }
+
+/* datas: usamos strings 'YYYY-MM-DD' (data local, sem fuso) */
+function pad(n){ return String(n).padStart(2,"0"); }
+function ymd(y,m,d){ return y+"-"+pad(m)+"-"+pad(d); }
+function ymKey(y,m){ return y+"-"+pad(m); }
+function todayStr(){ const d=new Date(); return ymd(d.getFullYear(), d.getMonth()+1, d.getDate()); }
+function parseYMD(s){ const [y,m,d]=s.split("-").map(Number); return {y,m,d}; }
+function dateFromStr(s){ const {y,m,d}=parseYMD(s); return new Date(y,m-1,d); }
+function strFromDate(dt){ return ymd(dt.getFullYear(), dt.getMonth()+1, dt.getDate()); }
+function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+function clampDay(y,m,day){ return Math.min(day, daysInMonth(y,m)); }
+function addMonthsYM(y,m,add){ const t=y*12+(m-1)+add; return {y:Math.floor(t/12), m:(t%12)+1}; }
+function ymToYM(key){ const [y,m]=key.split("-").map(Number); return {y,m}; }
+function fmtDate(s){ const {y,m,d}=parseYMD(s); return pad(d)+"/"+pad(m)+"/"+y; }
+function fmtDateShort(s){ const {m,d}=parseYMD(s); return pad(d)+"/"+pad(m); }
+const MONTHS_PT=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function monthLabel(key){ const {y,m}=ymToYM(key); return MONTHS_PT[m-1]+" "+y; }
+function monthLabelShort(key){ const {y,m}=ymToYM(key); return MONTHS_PT[m-1].slice(0,3)+"/"+String(y).slice(2); }
+
+const SWATCH_COLORS=["#6366F1","#8B5CF6","#A855F7","#D946EF","#EC4899","#F43F5E","#EF4444","#F97316","#F59E0B","#EAB308","#84CC16","#22C55E","#10B981","#14B8A6","#06B6D4","#0EA5E9","#3B82F6","#6D28D9","#DB2777","#E11D48","#65A30D","#0D9488","#0369A1","#64748B","#78716C","#475569"];
+const EMOJI_SUGGEST=["🛒","🍽️","🍔","☕","🚗","⛽","🚌","🏠","💡","💧","📶","💊","🏥","🎮","🎬","🎵","✈️","🏋️","👕","🎁","📚","💼","💰","🔁","🐾","💳","📦","🧾","🍺","🍕"];
+
+/* ============================================================
+   MOTOR: expandir gastos em lançamentos (postings)
+   ============================================================ */
+function perInstallment(total, n){
+  let cents=Math.round((total||0)*100);
+  const base=Math.floor(cents/n);
+  const arr=new Array(n).fill(base);
+  let rem=cents-base*n;
+  for(let i=0;i<rem;i++) arr[i]+=1;
+  return arr.map(c=>c/100);
+}
+function cardById(id){ return state.cards.find(c=>c.id===id); }
+function catById(id){ return state.categories.find(c=>c.id===id); }
+function bankById(id){ return state.banks.find(b=>b.id===id); }
+
+/* fatura: para uma compra numa data, em qual fatura cai (fechamento e pagamento) */
+function invoiceForPurchase(dateStr, card){
+  const {y,m,d}=parseYMD(dateStr);
+  const closing=card.closingDay, payd=card.paymentDay;
+  let cy=y, cm=m;
+  if(d>closing){ const a=addMonthsYM(cy,cm,1); cy=a.y; cm=a.m; }
+  let py=cy, pm=cm;
+  if(payd<closing){ const a=addMonthsYM(py,pm,1); py=a.y; pm=a.m; }
+  return { closeY:cy, closeM:cm, closeDay:clampDay(cy,cm,closing),
+           payY:py, payM:pm, payDay:clampDay(py,pm,payd),
+           payKey:ymKey(py,pm), payStr:ymd(py,pm,clampDay(py,pm,payd)) };
+}
+
+/* gera datas de ocorrência (recorrência) dentro de [from,to] */
+function occurrences(exp, fromDt, toDt){
+  const out=[]; const r=exp.recurrence; if(!r) return out;
+  const st=parseYMD(exp.date);
+  let hardEnd=toDt;
+  if(r.endType==="date" && r.endDate){ const e=dateFromStr(r.endDate); if(e<hardEnd) hardEnd=e; }
+  const countLimit=(r.endType==="count" && r.count>0)? r.count : Infinity;
+  let emitted=0, guard=0;
+  if(r.freq==="weekly"){
+    const step=7*(r.interval||1);
+    let dt=new Date(st.y, st.m-1, st.d);
+    while(dt<=hardEnd && emitted<countLimit && guard++<5000){
+      if(dt>=fromDt) out.push(strFromDate(dt));
+      emitted++; dt=new Date(dt.getTime()); dt.setDate(dt.getDate()+step);
+    }
+  } else { // monthly
+    let y=st.y, m=st.m; const day=r.dayOfMonth||st.d; const step=r.interval||1;
+    const startDt=new Date(st.y, st.m-1, st.d);
+    while(guard++<2000){
+      const dd=clampDay(y,m,day); const dt=new Date(y,m-1,dd);
+      if(dt>hardEnd) break;
+      if(dt>=startDt){
+        if(emitted>=countLimit) break;
+        if(dt>=fromDt) out.push(ymd(y,m,dd));
+        emitted++;
+      }
+      const a=addMonthsYM(y,m,step); y=a.y; m=a.m;
+    }
+  }
+  return out;
+}
+
+/* expande UM gasto em postings. recFrom/recTo limitam recorrência. */
+function expandExpense(exp, recFromDt, recToDt){
+  const out=[];
+  const cat=catById(exp.categoryId);
+  const emoji=cat?cat.emoji:"💸";
+  if(exp.recurrence){
+    const dates=occurrences(exp, recFromDt, recToDt);
+    for(const od of dates){
+      if(exp.method==="pix"){
+        out.push(posting(exp, od, ymKey(...Object.values(parseYMDpair(od))), exp.amount, "pix", null, emoji, exp.name));
+      } else {
+        const inv=invoiceForPurchase(od, cardById(exp.cardId)||{closingDay:1,paymentDay:10});
+        out.push(posting(exp, inv.payStr, inv.payKey, exp.amount, "card", exp.cardId, emoji, exp.name, od));
+      }
+    }
+    return out;
+  }
+  if(exp.method==="pix"){
+    out.push(posting(exp, exp.date, monthKeyOf(exp.date), exp.amount, "pix", null, emoji, exp.name));
+    return out;
+  }
+  // cartão
+  const card=cardById(exp.cardId)||{closingDay:1,paymentDay:10};
+  const n=Math.max(1, exp.installments||1);
+  const inv=invoiceForPurchase(exp.date, card);
+  const amts=perInstallment(exp.amount, n);
+  for(let i=0;i<n;i++){
+    const ym=addMonthsYM(inv.payY, inv.payM, i);
+    const payDay=clampDay(ym.y, ym.m, card.paymentDay);
+    const eff=ymd(ym.y, ym.m, payDay);
+    const label=n>1? exp.name+" ("+(i+1)+"/"+n+")" : exp.name;
+    out.push(posting(exp, eff, ymKey(ym.y,ym.m), amts[i], "card", exp.cardId, emoji, label, exp.date));
+  }
+  return out;
+}
+function parseYMDpair(s){ const {y,m}=parseYMD(s); return {y,m}; }
+function monthKeyOf(s){ const {y,m}=parseYMD(s); return ymKey(y,m); }
+function posting(exp, eff, mkey, amount, method, cardId, emoji, label, purchaseDate){
+  return { id:exp.id, eff, month:mkey, amount:clamp2(amount), method, cardId,
+           categoryId:exp.categoryId, emoji, label, purchaseDate:purchaseDate||eff };
+}
+
+/* todos os postings dentro de uma janela de recorrência */
+function allPostings(recFromDt, recToDt){
+  const out=[];
+  for(const exp of state.expenses){ for(const p of expandExpense(exp, recFromDt, recToDt)) out.push(p); }
+  return out;
+}
+/* postings de um mês específico (key 'YYYY-MM') */
+function postingsForMonth(mkey){
+  const {y,m}=ymToYM(mkey);
+  const from=new Date(y, m-1-2, 1);            // 2 meses antes (recorrência p/ fatura)
+  const to=new Date(y, m, 0); to.setDate(to.getDate()+5);
+  return allPostings(from, to).filter(p=>p.month===mkey);
+}
+
+/* ============================================================
+   INVESTIMENTOS — helpers
+   ============================================================ */
+function productBalance(prod, mkey){ return (prod.balances&&prod.balances[mkey]!=null)? prod.balances[mkey] : null; }
+function prevMonthWithBalance(prod, mkey){
+  const months=Object.keys(prod.balances||{}).filter(k=>k<mkey).sort();
+  return months.length? months[months.length-1] : null;
+}
+function bankTotal(bankId, mkey){
+  let sum=0, has=false;
+  for(const p of state.products.filter(p=>p.bankId===bankId)){
+    const b=productBalance(p,mkey); if(b!=null){ sum+=b; has=true; }
+  }
+  return has? sum : (anyBalanceUpTo(bankId,mkey)? sum : null);
+}
+function anyBalanceUpTo(bankId,mkey){
+  return state.products.filter(p=>p.bankId===bankId).some(p=>Object.keys(p.balances||{}).some(k=>k<=mkey));
+}
+function grandTotal(mkey){
+  let s=0; for(const p of state.products){ const b=productBalance(p,mkey); if(b!=null) s+=b; } return s;
+}
+function monthlyCDI(){ const a=(state.settings.cdiAnnual||0)/100; return Math.pow(1+a, 1/12)-1; }
+function estMonthlyYield(prod, mkey){
+  const b=productBalance(prod,mkey); if(b==null||b<=0) return 0;
+  const mc=monthlyCDI();
+  const cap=(prod.maxInvestment!=null && prod.maxInvestment>0)? prod.maxInvestment : Infinity;
+  const within=Math.min(b,cap), above=Math.max(0,b-cap);
+  const r1=(prod.cdiRate!=null? prod.cdiRate:100)/100;
+  const r2=(prod.cdiRateAbove!=null? prod.cdiRateAbove : (prod.cdiRate!=null?prod.cdiRate:100))/100;
+  return within*mc*r1 + above*mc*r2;
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const V=document.getElementById("view");
+const TB=document.getElementById("topbar");
+function render(){
+  document.documentElement.setAttribute("data-theme", state.settings.theme==="light"?"light":"dark");
+  document.querySelector('meta[name=theme-color]').setAttribute("content", state.settings.theme==="light"?"#F4F6F9":"#0E1014");
+  renderTabbar();
+  const t=state.ui.tab;
+  document.getElementById("fab").style.display = (t==="painel"||t==="gastos")?"grid":"none";
+  if(t==="painel") renderPainel();
+  else if(t==="gastos") renderGastos();
+  else if(t==="cartoes") renderCartoes();
+  else if(t==="invest") renderInvest();
+  else if(t==="mais") renderMais();
+}
+
+function topbar(title, sub, right){
+  TB.innerHTML = `<div class="topbar-row"><div><h1>${esc(title)}</h1>${sub?`<div class="sub">${sub}</div>`:""}</div>${right||""}</div>`;
+}
+function monthNav(curKey, action){
+  return `<div class="monthnav">
+    <button data-act="${action}" data-dir="-1">‹</button>
+    <div class="mlabel">${monthLabelShort(curKey)}</div>
+    <button data-act="${action}" data-dir="1">›</button>
+  </div>`;
+}
+
+/* ---------- PAINEL ---------- */
+function renderPainel(){
+  const mkey=state.ui.month;
+  topbar("Painel", "Faturas e gastos do mês", monthNav(mkey,"month"));
+  const posts=postingsForMonth(mkey);
+
+  // por cartão
+  const byCard={};
+  for(const c of state.cards) byCard[c.id]={card:c, total:0, items:[]};
+  let pixTotal=0; const pixItems=[];
+  for(const p of posts){
+    if(p.method==="pix"){ pixTotal+=p.amount; pixItems.push(p); }
+    else if(byCard[p.cardId]){ byCard[p.cardId].total+=p.amount; byCard[p.cardId].items.push(p); }
+  }
+  const cardsTotal=Object.values(byCard).reduce((s,o)=>s+o.total,0);
+  const monthTotal=cardsTotal+pixTotal;
+
+  // investimentos resumo
+  const gtNow=grandTotal(state.ui.investMonth);
+  const prevInvKey=prevGrandMonth(state.ui.investMonth);
+  const gtPrev=prevInvKey? grandTotal(prevInvKey):null;
+
+  let h=`<div class="section">
+    <div class="hero">
+      <div class="lbl">Total a pagar em ${esc(monthLabel(mkey))}</div>
+      <div class="big num">${fmt(monthTotal)}</div>
+      ${hoursLine(monthTotal)}
+      <div class="splitrow">
+        <div class="si"><div class="k"><span class="dot" style="background:var(--primary)"></span>Cartões</div><div class="v num">${fmt(cardsTotal)}</div>${hoursBadge(cardsTotal)}</div>
+        <div class="si"><div class="k"><span class="dot" style="background:var(--pix)"></span>Pix / à vista</div><div class="v num">${fmt(pixTotal)}</div>${hoursBadge(pixTotal)}</div>
+      </div>
+    </div>
+  </div>`;
+
+  // cartões
+  if(state.cards.length){
+    h+=`<div class="section"><div class="section-h"><h2>Por cartão</h2></div><div class="chiprow">`;
+    for(const c of state.cards){
+      const o=byCard[c.id]; const inv=invoiceForPurchase(ymd(...Object.values(ymToYM(mkey)),15), c);
+      const open=state.ui.openCard===c.id;
+      h+=`<button class="cchip" data-act="togglecard" data-id="${c.id}">
+            <span class="bar" style="background:${c.color}"></span>
+            <span class="ico" style="background:${c.color}">${esc((c.name||"?").slice(0,1).toUpperCase())}</span>
+            <span class="meta"><span class="nm">${esc(c.name)}</span><span class="dt">fecha dia ${c.closingDay} · vence dia ${c.paymentDay}</span></span>
+            <span class="amt"><span class="v num">${fmt(o.total)}</span><span class="s">${o.items.length} lanç.</span>${hoursBadge(o.total)}</span>
+            <span class="chev">${open?"▴":"▾"}</span>
+          </button>`;
+      if(open){
+        h+=`<div class="card" style="margin-top:-3px">`;
+        if(o.items.length){ h+=`<div class="plist">`+o.items.sort((a,b)=>a.eff<b.eff?-1:1).map(postingRow).join("")+`</div>`; }
+        else h+=`<div class="mutetxt" style="text-align:center;padding:6px 0">Sem lançamentos nesta fatura.</div>`;
+        h+=`</div>`;
+      }
+    }
+    h+=`</div></div>`;
+  } else {
+    h+=`<div class="section"><div class="addbtn" data-act="goto" data-tab="cartoes">＋ Cadastrar primeiro cartão</div></div>`;
+  }
+
+  // pix (recolhível, igual aos cartões)
+  if(pixItems.length){
+    const openPix=state.ui.openCard==="__pix__";
+    h+=`<div class="section"><div class="section-h"><h2>Pix / à vista</h2></div><div class="chiprow">
+        <button class="cchip" data-act="togglecard" data-id="__pix__">
+          <span class="bar" style="background:var(--pix)"></span>
+          <span class="ico" style="background:var(--pix)">⚡</span>
+          <span class="meta"><span class="nm">Pix / à vista</span><span class="dt">sai do saldo na data</span></span>
+          <span class="amt"><span class="v num">${fmt(pixTotal)}</span><span class="s">${pixItems.length} lanç.</span>${hoursBadge(pixTotal)}</span>
+          <span class="chev">${openPix?"▴":"▾"}</span>
+        </button>`;
+    if(openPix){
+      h+=`<div class="card" style="margin-top:-3px"><div class="plist">`+pixItems.sort((a,b)=>a.eff<b.eff?-1:1).map(postingRow).join("")+`</div></div>`;
+    }
+    h+=`</div></div>`;
+  }
+
+  // categorias
+  const byCat={};
+  for(const p of posts){ (byCat[p.categoryId]||(byCat[p.categoryId]={sum:0,emoji:p.emoji})).sum+=p.amount; }
+  const catArr=Object.entries(byCat).map(([id,o])=>({cat:catById(id),sum:o.sum,emoji:(catById(id)||{}).emoji||o.emoji})).sort((a,b)=>b.sum-a.sum);
+  if(catArr.length){
+    const max=catArr[0].sum||1;
+    h+=`<div class="section"><div class="section-h"><h2>Por categoria</h2></div><div class="card">`;
+    catArr.forEach((o,i)=>{
+      const p=(o.sum/(monthTotal||1)*100);
+      const col=SWATCH_COLORS[i%SWATCH_COLORS.length];
+      h+=`<div class="catbar">
+        <span class="em">${esc(o.emoji||"📦")}</span>
+        <span class="cb"><span class="cl"><span class="nm">${esc(o.cat?o.cat.name:"Sem categoria")}</span><span class="vv num">${fmt(o.sum)} <span style="color:var(--faint);font-weight:600">${p.toFixed(0)}%</span></span></span>
+        <span class="track"><span class="fill" style="width:${(o.sum/max*100)}%;background:${col}"></span></span></span>
+      </div>`;
+    });
+    h+=`</div></div>`;
+  }
+
+  if(!posts.length){
+    h+=`<div class="empty"><div class="ee">📊</div><div class="et">Nada lançado em ${esc(monthLabel(mkey))}</div><div class="ed">Toque no botão + para registrar um gasto no cartão ou no Pix.</div></div>`;
+  }
+
+  // investimentos
+  if(state.products.length){
+    const dColor=gtPrev==null?"zero":(gtNow-gtPrev>0?"pos":(gtNow-gtPrev<0?"neg":"zero"));
+    h+=`<div class="section"><div class="section-h"><h2>Investimentos</h2><span class="linkbtn" data-act="goto" data-tab="invest">Ver tudo ›</span></div>
+      <button class="card" style="display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left" data-act="goto" data-tab="invest">
+        <div><div class="mutetxt" style="font-size:12px">Patrimônio · ${esc(monthLabelShort(state.ui.investMonth))}</div><div class="num" style="font-size:22px;font-weight:780;margin-top:2px">${fmt(gtNow)}</div></div>
+        <div class="delta ${dColor}" style="text-align:right">${gtPrev==null?"—":(gtNow-gtPrev>=0?"+":"")+fmtShort(gtNow-gtPrev)}<br><span style="font-weight:600;color:var(--faint)">${gtPrev?pct((gtNow-gtPrev)/(gtPrev||1)*100):"vs mês ant."}</span></div>
+      </button></div>`;
+  }
+
+  V.innerHTML=h;
+}
+function postingRow(p){
+  return `<div class="prow">
+    <span class="em">${esc(p.emoji||"💸")}</span>
+    <span class="pm"><span class="t">${esc(p.label)}</span><span class="d">${fmtDate(p.eff)}</span></span>
+    <span class="pv num">${fmt(p.amount)}</span>
+  </div>`;
+}
+function prevGrandMonth(mkey){
+  const months=new Set();
+  for(const p of state.products) Object.keys(p.balances||{}).forEach(k=>months.add(k));
+  const arr=[...months].filter(k=>k<mkey).sort();
+  return arr.length?arr[arr.length-1]:null;
+}
+
+/* ---------- GASTOS (gerenciar entradas) ---------- */
+function renderGastos(){
+  topbar("Gastos", state.expenses.length+" cadastrado"+(state.expenses.length!==1?"s":""), "");
+  let h="";
+  if(!state.expenses.length){
+    h=`<div class="empty"><div class="ee">🧾</div><div class="et">Nenhum gasto cadastrado</div><div class="ed">Registre compras no cartão (à vista ou parceladas), Pix e gastos recorrentes.</div><button class="btn primary" data-act="addexp">＋ Novo gasto</button></div>`;
+    V.innerHTML=h; return;
+  }
+  // ordena por data desc
+  const list=[...state.expenses].sort((a,b)=> a.date<b.date?1:-1);
+  h+=`<div class="section">`;
+  for(const e of list){
+    const cat=catById(e.categoryId);
+    let sub="";
+    if(e.recurrence){
+      sub = recurrenceLabel(e.recurrence);
+    } else if(e.method==="pix"){ sub="Pix · "+fmtDate(e.date); }
+    else { const c=cardById(e.cardId); const n=e.installments||1; sub=(c?c.name:"Cartão")+" · "+(n>1?n+"x de "+fmt((e.amount||0)/n):"à vista")+" · "+fmtDate(e.date); }
+    const methodColor = e.method==="pix" ? "var(--pix)" : ((cardById(e.cardId)||{}).color||"var(--primary)");
+    h+=`<div class="adminrow">
+      <span class="sw" style="background:${methodColor}">${esc(cat?cat.emoji:"💸")}</span>
+      <span class="am"><span class="nm">${esc(e.name)}</span><span class="sub">${esc(sub)}</span></span>
+      <span class="num" style="font-weight:700;margin-right:4px">${fmt(e.amount)}</span>
+      <button class="iconbtn" data-act="editexp" data-id="${e.id}">✎</button>
+    </div>`;
+  }
+  h+=`</div>`;
+  V.innerHTML=h;
+}
+function recurrenceLabel(r){
+  if(r.freq==="weekly"){ const w=r.interval||1; return "Recorrente · "+(w===1?"toda semana":"a cada "+w+" semanas"); }
+  const mo=r.interval||1; return "Recorrente · "+(mo===1?"todo mês":"a cada "+mo+" meses")+" no dia "+(r.dayOfMonth||"—");
+}
+
+/* ---------- CARTÕES ---------- */
+function renderCartoes(){
+  topbar("Cartões", state.cards.length+" cadastrado"+(state.cards.length!==1?"s":""), "");
+  let h=`<div class="section">`;
+  for(const c of state.cards){
+    const main = state.settings.defaultCardId===c.id;
+    h+=`<div class="adminrow">
+      <span class="sw" style="background:${c.color}">${esc((c.name||"?").slice(0,1).toUpperCase())}</span>
+      <span class="am"><span class="nm">${esc(c.name)}${main?' <span style="color:var(--warn)">⭐</span>':''}</span><span class="sub">Fecha dia ${c.closingDay} · Vence dia ${c.paymentDay}${main?" · Principal":""}</span></span>
+      <button class="iconbtn" data-act="editcard" data-id="${c.id}">✎</button>
+    </div>`;
+  }
+  h+=`<button class="addbtn" data-act="addcard">＋ Adicionar cartão</button></div>`;
+  if(!state.cards.length){
+    h=`<div class="empty"><div class="ee">💳</div><div class="et">Nenhum cartão</div><div class="ed">Cadastre seus cartões com cor, dia de fechamento e dia de vencimento da fatura.</div><button class="btn primary" data-act="addcard">＋ Adicionar cartão</button></div>`;
+  }
+  V.innerHTML=h;
+}
+
+/* ---------- INVESTIMENTOS ---------- */
+function renderInvest(){
+  const mkey=state.ui.investMonth;
+  topbar("Investimentos", "Atualize os valores do mês", monthNav(mkey,"investMonth"));
+  const gtNow=grandTotal(mkey);
+  const prevKey=prevGrandMonth(mkey);
+  const gtPrev=prevKey? grandTotal(prevKey):null;
+  const diff=gtPrev==null?null:gtNow-gtPrev;
+  let totalYield=0; for(const p of state.products) totalYield+=estMonthlyYield(p,mkey);
+
+  let h=`<div class="section"><div class="hero">
+    <div class="lbl">Patrimônio · ${esc(monthLabel(mkey))}</div>
+    <div class="big num">${fmt(gtNow)}</div>
+    ${hoursLine(gtNow)}
+    <div class="splitrow">
+      <div class="si"><div class="k">Variação vs ${prevKey?monthLabelShort(prevKey):"—"}</div><div class="v num ${diff==null?"":(diff>=0?"":"")}" style="color:${diff==null?"var(--text)":(diff>=0?"var(--pos)":"var(--neg)")}">${diff==null?"—":(diff>=0?"+":"")+fmt(diff)}</div></div>
+      <div class="si"><div class="k">Rend. mensal estim. (bruto)</div><div class="v num" style="color:var(--pos)">${fmt(totalYield)}</div>${hoursBadge(totalYield)}</div>
+    </div></div></div>`;
+
+  if(!state.banks.length){
+    h+=`<div class="empty"><div class="ee">🏦</div><div class="et">Nenhum banco cadastrado</div><div class="ed">Cadastre os bancos/corretoras e depois os produtos onde você investe.</div><button class="btn primary" data-act="addbank">＋ Adicionar banco</button></div>`;
+    V.innerHTML=h; return;
+  }
+
+  for(const bank of state.banks){
+    const prods=state.products.filter(p=>p.bankId===bank.id);
+    let bt=0, hasB=false;
+    for(const p of prods){ const b=productBalance(p,mkey); if(b!=null){bt+=b;hasB=true;} }
+    h+=`<div class="bankcard"><div class="bankhead">
+      <span class="bar" style="background:${bank.color}"></span>
+      <span class="ico" style="background:${bank.color}">${esc((bank.name||"?").slice(0,1).toUpperCase())}</span>
+      <span class="bm"><span class="nm">${esc(bank.name)}</span><span class="sub">${prods.length} produto${prods.length!==1?"s":""}</span></span>
+      <span class="bt"><span class="v num">${hasB?fmt(bt):"—"}</span></span>
+      <button class="iconbtn" data-act="editbank" data-id="${bank.id}" style="margin-left:8px">✎</button>
+    </div>`;
+    for(const p of prods){
+      const bal=productBalance(p,mkey);
+      const pm=prevMonthWithBalance(p,mkey);
+      const pv=pm!=null?productBalance(p,pm):null;
+      const d=(bal!=null&&pv!=null)?bal-pv:null;
+      const dCls=d==null?"zero":(d>0?"pos":(d<0?"neg":"zero"));
+      h+=`<div class="prod">
+        <div class="ptop"><span class="pname"><span class="nm">${esc(p.name)}</span></span>
+          <button class="iconbtn" data-act="editprod" data-id="${p.id}">✎</button></div>
+        <div class="pflags">${productFlags(p)}</div>
+        <div class="balrow">
+          <span class="blbl">Saldo</span>
+          <input class="balinput num money" inputmode="numeric" data-act="setbal" data-id="${p.id}" placeholder="0,00" value="${moneyInitVal(bal)}">
+          <span class="delta ${dCls}">${d==null?"":(d>=0?"+":"")+fmtShort(d)}</span>
+        </div>
+      </div>`;
+    }
+    h+=`<div style="padding:11px 15px"><button class="btn sm ghost full" data-act="addprod" data-bank="${bank.id}" style="border-style:dashed;color:var(--muted)">＋ Produto em ${esc(bank.name)}</button></div>`;
+    h+=`</div>`;
+  }
+  h+=`<button class="addbtn" data-act="addbank">＋ Adicionar banco</button>`;
+  V.innerHTML=h;
+}
+function productFlags(p){
+  const f=[];
+  f.push(`<span class="flag">CDI <b>${p.cdiRate!=null?p.cdiRate:100}%</b></span>`);
+  f.push(`<span class="flag">${p.dailyLiquidity?"🟢 Liq. diária":"🔒 Sem liq. diária"}</span>`);
+  if(p.maturityDate) f.push(`<span class="flag">📅 Vence ${fmtDateShort(p.maturityDate)}/${String(parseYMD(p.maturityDate).y).slice(2)}</span>`);
+  if(p.maturityMonths) f.push(`<span class="flag">⏳ <b>${p.maturityMonths}</b>m</span>`);
+  f.push(`<span class="flag">${p.acceptsContributions?"➕ Aceita aporte":"⛔ Sem aporte"}</span>`);
+  if(p.maxInvestment!=null&&p.maxInvestment>0){
+    f.push(`<span class="flag">Limite <b>${fmtShort(p.maxInvestment)}</b></span>`);
+    if(p.cdiRateAbove!=null) f.push(`<span class="flag">Acima: CDI <b>${p.cdiRateAbove}%</b></span>`);
+  }
+  return f.join("");
+}
+
+/* ---------- MAIS ---------- */
+function renderMais(){
+  const sub=state.ui.more;
+  if(sub==="categorias"){ renderCategorias(); return; }
+  if(sub==="backup"){ renderBackup(); return; }
+  if(sub==="ajustes"){ renderAjustes(); return; }
+  topbar("Mais","Configurações e dados","");
+  const driveOn=!!state.settings.driveClientId;
+  let h=`<div class="section"><div class="card" style="padding:6px 14px">
+    <button class="menuitem" data-act="more" data-sub="categorias"><span class="mi">🏷️</span><span class="mt"><span class="a">Categorias</span><span class="b">${state.categories.length} cadastradas · emojis</span></span><span class="chev">›</span></button>
+    <button class="menuitem" data-act="more" data-sub="backup"><span class="mi">☁️</span><span class="mt"><span class="a">Backup e restauração</span><span class="b">Google Drive ${driveOn?"· configurado":"· configurar"} ou arquivo</span></span><span class="chev">›</span></button>
+    <button class="menuitem" data-act="exportxlsx"><span class="mi">📊</span><span class="mt"><span class="a">Exportar planilha</span><span class="b">Gastos e investimentos em .xlsx</span></span><span class="chev">›</span></button>
+    <button class="menuitem" data-act="more" data-sub="ajustes"><span class="mi">⚙️</span><span class="mt"><span class="a">Ajustes</span><span class="b">Salário e horas, CDI anual, tema</span></span><span class="chev">›</span></button>
+  </div></div>`;
+  h+=`<div class="section"><div class="note">Dados salvos neste aparelho/navegador.${Store.usable?"":" <b>Atenção:</b> o armazenamento local está bloqueado aqui — os dados ficam só nesta sessão. Faça backup em arquivo ou hospede o app."} Versão ${APP_VERSION}.</div></div>`;
+  V.innerHTML=h;
+}
+
+function renderCategorias(){
+  topbar("Categorias","Toque para editar", `<span class="closex" data-act="more" data-sub="root">‹</span>`);
+  let h=`<div class="section"><a class="backlink" data-act="more" data-sub="root">‹ Mais</a>`;
+  for(const c of state.categories){
+    const count=state.expenses.filter(e=>e.categoryId===c.id).length;
+    h+=`<div class="adminrow">
+      <span class="sw" style="background:var(--surface3);font-size:22px">${esc(c.emoji)}</span>
+      <span class="am"><span class="nm">${esc(c.name)}</span><span class="sub">${count} gasto${count!==1?"s":""}</span></span>
+      <button class="iconbtn" data-act="editcat" data-id="${c.id}">✎</button>
+    </div>`;
+  }
+  h+=`<button class="addbtn" data-act="addcat">＋ Adicionar categoria</button></div>`;
+  V.innerHTML=h;
+}
+
+function renderBackup(){
+  topbar("Backup","Google Drive e arquivo",`<span class="closex" data-act="more" data-sub="root">‹</span>`);
+  const cid=state.settings.driveClientId;
+  let h=`<div class="section"><a class="backlink" data-act="more" data-sub="root">‹ Mais</a>`;
+
+  h+=`<div class="section-h"><h2>Google Drive</h2></div>
+  <div class="card">
+    <div class="field" style="margin-bottom:10px"><label>OAuth Client ID</label>
+      <input type="text" id="driveCid" value="${esc(cid)}" placeholder="xxxx.apps.googleusercontent.com" autocapitalize="off" autocomplete="off" spellcheck="false">
+      <div class="hint">Use o mesmo Client ID do seu app de treino. A origem onde você hospeda precisa estar autorizada no Google Cloud.</div>
+    </div>
+    <button class="btn sm full" data-act="savecid">Salvar Client ID</button>
+    <div class="divline"></div>
+    <div class="row2">
+      <button class="btn primary" data-act="drivebackup">⬆️ Enviar backup</button>
+      <button class="btn" data-act="driverestore">⬇️ Restaurar</button>
+    </div>
+    <div class="hint" id="drivestatus" style="margin-top:10px"></div>
+  </div>`;
+
+  h+=`<div class="section-h" style="margin-top:22px"><h2>Arquivo local</h2></div>
+  <div class="card">
+    <div class="row2">
+      <button class="btn primary" data-act="filebackup">⬇️ Baixar .json</button>
+      <button class="btn" data-act="filerestore">⬆️ Restaurar</button>
+    </div>
+    <div class="hint" style="margin-top:10px">Funciona em qualquer lugar, inclusive aqui na pré-visualização. Guarde o arquivo onde quiser.</div>
+  </div>`;
+
+  h+=`<div class="section" style="margin-top:22px"><div class="note"><b>Como funciona o Drive:</b> ao enviar, o app cria/atualiza o arquivo <b>${DRIVE_FILENAME}</b> no seu Google Drive (escopo restrito: só arquivos criados por este app). Restaurar lê esse mesmo arquivo.</div></div>`;
+  h+=`</div>`;
+  V.innerHTML=h;
+}
+
+function renderAjustes(){
+  topbar("Ajustes","",`<span class="closex" data-act="more" data-sub="root">‹</span>`);
+  let h=`<div class="section"><a class="backlink" data-act="more" data-sub="root">‹ Mais</a>`;
+
+  const rate=hourlyRate();
+  h+=`<div class="section-h"><h2>Horas trabalhadas</h2></div>
+  <div class="card">
+    <div class="row2">
+      <div class="field" style="margin-bottom:6px"><label>Salário líquido / mês (R$)</label>
+        <input type="text" id="salInput" class="money" inputmode="numeric" value="${moneyInitVal(state.settings.netSalary||0)}" placeholder="0,00"></div>
+      <div class="field" style="margin-bottom:6px"><label>Horas por semana</label>
+        <input type="number" id="hrsInput" inputmode="decimal" step="0.5" min="0" value="${state.settings.hoursPerWeek||""}" placeholder="ex.: 40"></div>
+    </div>
+    <div class="hint" style="margin-bottom:9px">${rate>0?`Valor da sua hora ≈ <b style="color:var(--text)">${fmt(rate)}</b>. Os gastos e rendimentos aparecem também em horas de trabalho pelo app.`:"Preencha os dois campos para ver gastos e rendimentos em horas de trabalho."}</div>
+    <button class="btn sm full" data-act="saveincome">Salvar</button>
+  </div>`;
+
+  h+=`<div class="section-h" style="margin-top:22px"><h2>Investimentos</h2></div>
+  <div class="card">
+    <div class="field" style="margin-bottom:6px"><label>CDI anual estimado (%)</label>
+      <input type="number" id="cdiInput" inputmode="decimal" step="0.1" value="${state.settings.cdiAnnual}">
+      <div class="hint">Usado só para estimar o rendimento mensal dos produtos. Não afeta os saldos que você cadastra.</div>
+    </div>
+    <button class="btn sm full" data-act="savecdi">Salvar</button>
+  </div>`;
+
+  h+=`<div class="section-h" style="margin-top:22px"><h2>Aparência</h2></div>
+  <div class="card">
+    <label style="display:block;font-size:12.5px;font-weight:650;color:var(--muted);margin-bottom:9px">Tema</label>
+    <div class="seg">
+      <button data-act="theme" data-v="dark" class="${state.settings.theme==='dark'?'on':''}">🌙 Escuro</button>
+      <button data-act="theme" data-v="light" class="${state.settings.theme==='light'?'on':''}">☀️ Claro</button>
+    </div>
+  </div></div>`;
+  V.innerHTML=h;
+}
+
+/* ---------- TABBAR ---------- */
+function renderTabbar(){
+  const tabs=[
+    ["painel","Painel",icon("home")],
+    ["gastos","Gastos",icon("receipt")],
+    ["cartoes","Cartões",icon("card")],
+    ["invest","Investir",icon("chart")],
+    ["mais","Mais",icon("more")],
+  ];
+  document.getElementById("tabbar").innerHTML = tabs.map(([id,lbl,ic])=>
+    `<button class="tab ${state.ui.tab===id?'active':''}" data-act="tab" data-tab="${id}">${ic}<span>${lbl}</span></button>`
+  ).join("");
+}
+function icon(n){
+  const p={
+    home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/>',
+    receipt:'<path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3l-2 1-2-1-2 1-2-1-2 1z"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    card:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 15h4"/>',
+    chart:'<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17v-5"/><path d="M13 17V8"/><path d="M18 17v-9"/>',
+    more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  };
+  return `<svg viewBox="0 0 24 24">${p[n]}</svg>`;
+}
+
+/* ============================================================
+   SHEET / MODAL
+   ============================================================ */
+const overlay=document.getElementById("overlay");
+const sheet=document.getElementById("sheet");
+const shead=document.getElementById("shead");
+const sbody=document.getElementById("sbody");
+let onSheetSave=null;
+function openSheet(title, bodyHTML, saveHandler, saveLabel){
+  shead.innerHTML=`<h3>${esc(title)}</h3><span class="closex" data-sheet="close">✕</span>`;
+  sbody.innerHTML=bodyHTML;
+  onSheetSave=saveHandler||null;
+  overlay.classList.add("show"); sheet.classList.add("show");
+  document.body.style.overflow="hidden";
+}
+function closeSheet(){
+  try{ sbody.removeEventListener("click", prodToggleHandler); }catch(_){}
+  overlay.classList.remove("show"); sheet.classList.remove("show");
+  document.body.style.overflow=""; onSheetSave=null;
+}
+overlay.addEventListener("click",closeSheet);
+document.addEventListener("click",e=>{ if(e.target.closest('[data-sheet="close"]')) closeSheet(); });
+
+/* swatch / emoji pickers dentro da sheet (delegação local) */
+sbody.addEventListener("click",e=>{
+  const sw=e.target.closest(".swatch");
+  if(sw){ sbody.querySelectorAll(".swatch").forEach(s=>s.classList.remove("sel")); sw.classList.add("sel"); sbody.querySelector("#fColor").value=sw.dataset.color; return; }
+  const em=e.target.closest(".emojipick button");
+  if(em){ sbody.querySelectorAll(".emojipick button").forEach(s=>s.classList.remove("on")); em.classList.add("on"); sbody.querySelector("#fEmoji").value=em.dataset.e; return; }
+  const sg=e.target.closest("[data-seg]");
+  if(sg){ const grp=sg.dataset.seg; sbody.querySelectorAll(`[data-seg="${grp}"]`).forEach(b=>b.classList.remove("on")); sg.classList.add("on"); handleSegChange(grp, sg.dataset.v); return; }
+  const tg=e.target.closest("[data-toggle]");
+  if(tg){ const sw2=tg.querySelector(".switch")||tg; sw2.classList.toggle("on"); handleToggleChange(tg.dataset.toggle, sw2.classList.contains("on")); return; }
+});
+
+function swatchPicker(sel){
+  sel = sel || SWATCH_COLORS[0];
+  const known = SWATCH_COLORS.includes(sel);
+  let html=`<input type="hidden" id="fColor" value="${esc(sel)}"><div class="swatches">`;
+  html+=SWATCH_COLORS.map(c=>`<button type="button" class="swatch ${c===sel?'sel':''}" data-color="${c}" style="background:${c}"></button>`).join("");
+  html+=`<label class="swatch addcolor ${known?'':'sel'}" style="${known?'':'background:'+esc(sel)}" title="Cor personalizada"><input type="color" value="${esc(known?'#6366F1':sel)}" oninput="window.__pickColor(this)"></label>`;
+  html+=`</div>`;
+  return html;
+}
+window.__pickColor=function(inp){
+  const c=inp.value;
+  document.getElementById('fColor').value=c;
+  document.querySelectorAll('.swatches .swatch').forEach(function(s){ s.classList.remove('sel'); });
+  const lab=inp.closest('.addcolor'); if(lab){ lab.classList.add('sel'); lab.style.background=c; }
+};
+function emojiPicker(sel){
+  return `<input type="hidden" id="fEmoji" value="${esc(sel)}">
+  <input type="text" id="fEmojiText" value="${esc(sel)}" maxlength="4" style="width:80px;text-align:center;font-size:22px" oninput="document.getElementById('fEmoji').value=this.value">
+  <div class="emojipick">`+EMOJI_SUGGEST.map(em=>`<button type="button" class="${em===sel?'on':''}" data-e="${em}" onclick="document.getElementById('fEmojiText').value='${em}'">${em}</button>`).join("")+`</div>`;
+}
+
+/* segura referências de formulário de gasto */
+let expForm={method:"card", recurring:false, freq:"monthly", endType:"never"};
+function handleSegChange(grp,v){
+  if(grp==="method"){ expForm.method=v; updateExpFormVisibility(); }
+  if(grp==="freq"){ expForm.freq=v; updateExpFormVisibility(); }
+  if(grp==="endtype"){ expForm.endType=v; updateExpFormVisibility(); }
+}
+function handleToggleChange(grp,on){
+  if(grp==="recurring"){ expForm.recurring=on; updateExpFormVisibility(); }
+}
+function updateExpFormVisibility(){
+  const q=id=>sbody.querySelector(id);
+  const isPix=expForm.method==="pix";
+  if(q("#cardBlock")) q("#cardBlock").style.display=isPix?"none":"block";
+  if(q("#recBlock")) q("#recBlock").style.display=expForm.recurring?"block":"none";
+  if(q("#instBlock")) q("#instBlock").style.display=(!isPix&&!expForm.recurring)?"block":"none";
+  if(q("#freqMonthly")) q("#freqMonthly").style.display=expForm.freq==="monthly"?"block":"none";
+  if(q("#freqWord")) q("#freqWord").textContent=expForm.freq==="weekly"?"semana(s)":"mês(es)";
+  if(q("#endDateBlock")) q("#endDateBlock").style.display=expForm.endType==="date"?"block":"none";
+  if(q("#endCountBlock")) q("#endCountBlock").style.display=expForm.endType==="count"?"block":"none";
+}
+
+/* ---------- FORM: GASTO ---------- */
+function openExpenseForm(existing){
+  if(!state.categories.length){ toast("Cadastre uma categoria antes.","err"); state.ui.tab="mais"; state.ui.more="categorias"; render(); return; }
+  const e=existing||{};
+  expForm={ method:e.method||"card", recurring:!!e.recurrence,
+            freq:(e.recurrence&&e.recurrence.freq)||"monthly",
+            endType:(e.recurrence&&e.recurrence.endType)||"never" };
+  const catOpts=state.categories.map(c=>`<option value="${c.id}" ${e.categoryId===c.id?"selected":""}>${esc(c.emoji)} ${esc(c.name)}</option>`).join("");
+  const selCard = e.cardId || (existing?null:state.settings.defaultCardId);
+  const cardOpts=state.cards.length? state.cards.map(c=>`<option value="${c.id}" ${selCard===c.id?"selected":""}>${esc(c.name)}${state.settings.defaultCardId===c.id?" ⭐":""}</option>`).join("") : "";
+  const r=e.recurrence||{};
+  const body=`
+    <div class="field"><label>Nome do gasto</label><input type="text" id="eName" value="${esc(e.name||"")}" placeholder="Ex.: Supermercado, Netflix..."></div>
+    <div class="row2">
+      <div class="field"><label>Valor (R$)</label><input type="text" id="eAmount" class="money" inputmode="numeric" value="${moneyInitVal(e.amount)}" placeholder="0,00"></div>
+      <div class="field"><label>Data</label><input type="date" id="eDate" value="${e.date||todayStr()}"></div>
+    </div>
+    <div class="field"><label>Categoria</label><select id="eCat">${catOpts}</select></div>
+
+    <div class="field"><label>Forma de pagamento</label>
+      <div class="seg ${expForm.method==='pix'?'pixseg':''}" id="methodSeg">
+        <button type="button" data-seg="method" data-v="card" class="${expForm.method==='card'?'on':''}">💳 Cartão</button>
+        <button type="button" data-seg="method" data-v="pix" class="${expForm.method==='pix'?'on':''}">⚡ Pix / à vista</button>
+      </div>
+      <div class="hint">No Pix o dinheiro sai na data informada. No cartão, entra na fatura correspondente.</div>
+    </div>
+
+    <div id="cardBlock" style="display:${expForm.method==='pix'?'none':'block'}">
+      <div class="field"><label>Cartão</label>
+        ${state.cards.length?`<select id="eCard">${cardOpts}</select>`:`<div class="note">Nenhum cartão cadastrado. <b data-act="addcard" style="color:var(--primary)">Cadastrar agora ›</b></div>`}
+      </div>
+      <div id="instBlock" style="display:${(expForm.method!=='pix'&&!expForm.recurring)?'block':'none'}">
+        <div class="field"><label>Parcelamento</label>
+          <input type="number" id="eInst" inputmode="numeric" min="1" max="72" value="${e.installments||1}">
+          <div class="hint">1 = à vista. Cada parcela cai numa fatura, mês a mês.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle" data-toggle="recurring"><div><div class="tl">Gasto recorrente</div><div class="td">Repete automaticamente (assinaturas, contas fixas...)</div></div><div class="switch ${expForm.recurring?'on':''}"></div></div>
+
+    <div id="recBlock" style="display:${expForm.recurring?'block':'none'}">
+      <div class="field"><label>Frequência</label>
+        <div class="seg" id="freqSeg">
+          <button type="button" data-seg="freq" data-v="weekly" class="${expForm.freq==='weekly'?'on':''}">Semanal</button>
+          <button type="button" data-seg="freq" data-v="monthly" class="${expForm.freq==='monthly'?'on':''}">Mensal</button>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>A cada</label><input type="number" id="eInterval" inputmode="numeric" min="1" value="${r.interval||1}"></div>
+        <div class="field"><label>&nbsp;</label><div class="btn" style="cursor:default;justify-content:flex-start"><span id="freqWord">${expForm.freq==='weekly'?'semana(s)':'mês(es)'}</span></div></div>
+      </div>
+      <div class="field" id="freqMonthly" style="display:${expForm.freq==='monthly'?'block':'none'}"><label>No dia do mês</label><input type="number" id="eDayOfMonth" inputmode="numeric" min="1" max="31" value="${r.dayOfMonth||parseYMD(e.date||todayStr()).d}"><div class="hint">Ex.: 30 = todo dia 30 (meses curtos usam o último dia).</div></div>
+      <div class="field"><label>Término</label>
+        <div class="seg" id="endSeg">
+          <button type="button" data-seg="endtype" data-v="never" class="${expForm.endType==='never'?'on':''}">Sem fim</button>
+          <button type="button" data-seg="endtype" data-v="date" class="${expForm.endType==='date'?'on':''}">Até data</button>
+          <button type="button" data-seg="endtype" data-v="count" class="${expForm.endType==='count'?'on':''}">Nº vezes</button>
+        </div>
+      </div>
+      <div class="field" id="endDateBlock" style="display:${expForm.endType==='date'?'block':'none'}"><label>Repetir até</label><input type="date" id="eEndDate" value="${r.endDate||""}"></div>
+      <div class="field" id="endCountBlock" style="display:${expForm.endType==='count'?'block':'none'}"><label>Número de ocorrências</label><input type="number" id="eCount" inputmode="numeric" min="1" value="${r.count||12}"></div>
+    </div>
+
+    <button class="btn primary full" data-act="saveexp" style="margin-top:6px">${existing?"Salvar alterações":"Adicionar gasto"}</button>
+    ${(existing&&existing.recurrence)?`
+    <div class="divline"></div>
+    <div class="field" style="margin-bottom:6px"><label>Encerrar ou mudar o valor a partir de uma data</label>
+      <div class="hint" style="margin-top:0;margin-bottom:8px">As faturas/lançamentos anteriores à data escolhida permanecem como estão. A partir dela, a recorrência para — ou passa a usar o novo valor, se você informar um.</div>
+      <input type="date" id="eCutDate" value="">
+      <input type="text" id="eCutAmount" class="money" inputmode="numeric" placeholder="Novo valor a partir da data (opcional)" style="margin-top:9px">
+    </div>
+    <button class="btn full" data-act="reccut" data-id="${existing.id}" style="margin-top:2px">Aplicar a partir desta data</button>
+    `:""}
+    ${existing?`<button class="btn danger full ghost" data-act="delexp" data-id="${existing.id}" style="margin-top:9px">Excluir gasto${existing.recurrence?" (tudo, inclusive passado)":""}</button>`:""}
+  `;
+  openSheet(existing?"Editar gasto":"Novo gasto", body);
+}
+function saveExpense(existing){
+  const q=id=>sbody.querySelector(id);
+  const name=q("#eName").value.trim();
+  const amount=moneyToNum(q("#eAmount").value);
+  const date=q("#eDate").value;
+  if(!name){ toast("Dê um nome ao gasto.","err"); return; }
+  if(!(amount>0)){ toast("Informe um valor válido.","err"); return; }
+  if(!date){ toast("Informe a data.","err"); return; }
+  const exp={
+    id: existing?existing.id:uid(),
+    name, amount:clamp2(amount), date,
+    categoryId:q("#eCat").value,
+    method:expForm.method,
+    cardId: expForm.method==="card" ? (q("#eCard")?q("#eCard").value:null) : null,
+    installments: (expForm.method==="card"&&!expForm.recurring)? Math.max(1,parseInt(q("#eInst").value||"1")) : 1,
+    recurrence:null
+  };
+  if(expForm.method==="card" && !exp.cardId){ toast("Selecione um cartão.","err"); return; }
+  if(expForm.recurring){
+    const freq=expForm.freq;
+    exp.recurrence={
+      freq, interval:Math.max(1,parseInt(q("#eInterval").value||"1")),
+      dayOfMonth: freq==="monthly"? Math.max(1,Math.min(31,parseInt(q("#eDayOfMonth").value||String(parseYMD(date).d)))) : null,
+      endType:expForm.endType,
+      endDate: expForm.endType==="date"? (q("#eEndDate").value||null):null,
+      count: expForm.endType==="count"? Math.max(1,parseInt(q("#eCount").value||"1")):null
+    };
+    exp.installments=1;
+  }
+  if(existing){ const i=state.expenses.findIndex(x=>x.id===existing.id); state.expenses[i]=exp; }
+  else state.expenses.push(exp);
+  save(); closeSheet(); state.ui.tab="painel"; render(); toast(existing?"Gasto atualizado":"Gasto adicionado","ok");
+}
+function applyRecurrenceCut(existing){
+  if(!existing) return;
+  const idx=state.expenses.findIndex(x=>x.id===existing.id);
+  if(idx<0) return;
+  const cur=state.expenses[idx];
+  if(!cur.recurrence){ toast("Este gasto não é recorrente.","err"); return; }
+  const q=id=>sbody.querySelector(id);
+  const cut=q("#eCutDate")?q("#eCutDate").value:"";
+  if(!cut){ toast("Escolha a data de corte.","err"); return; }
+  const newAmt=q("#eCutAmount")?moneyToNumOrNull(q("#eCutAmount").value):null;
+  // preserva a configuração de término original para a nova série
+  const origEnd={ endType:cur.recurrence.endType, endDate:cur.recurrence.endDate||null, count:cur.recurrence.count||null };
+  // encerra a série atual no dia anterior ao corte (mantém o passado)
+  cur.recurrence=Object.assign({}, cur.recurrence, { endType:"date", endDate:dayBeforeStr(cut), count:null });
+  let msg="Recorrência encerrada a partir de "+fmtDate(cut);
+  if(newAmt!=null && newAmt>0){
+    const novo=JSON.parse(JSON.stringify(cur));
+    novo.id=uid();
+    novo.amount=clamp2(newAmt);
+    novo.date=cut;
+    novo.installments=1;
+    novo.recurrence=Object.assign({}, cur.recurrence, origEnd);
+    state.expenses.push(novo);
+    msg="Novo valor "+fmt(newAmt)+" a partir de "+fmtDate(cut);
+  }
+  save(); closeSheet(); render(); toast(msg,"ok");
+}
+
+/* ---------- FORM: CARTÃO ---------- */
+function openCardForm(existing){
+  const c=existing||{color:SWATCH_COLORS[state.cards.length%SWATCH_COLORS.length]};
+  const body=`
+    <div class="field"><label>Nome do cartão</label><input type="text" id="cName" value="${esc(c.name||"")}" placeholder="Ex.: Nubank, Inter..."></div>
+    <div class="row2">
+      <div class="field"><label>Dia do fechamento</label><input type="number" id="cClose" inputmode="numeric" min="1" max="31" value="${c.closingDay||""}" placeholder="ex.: 28"></div>
+      <div class="field"><label>Dia do vencimento</label><input type="number" id="cPay" inputmode="numeric" min="1" max="31" value="${c.paymentDay||""}" placeholder="ex.: 5"></div>
+    </div>
+    <div class="field"><label>Cor</label>${swatchPicker(c.color)}</div>
+    <div class="toggle" data-toggle="cardmain"><div><div class="tl">Cartão principal</div><div class="td">Vem selecionado por padrão nas compras no cartão</div></div><div class="switch ${(existing? state.settings.defaultCardId===existing.id : !state.cards.length)?'on':''}" id="swCardMain"></div></div>
+    <button class="btn primary full" data-act="savecard" style="margin-top:6px">${existing?"Salvar":"Adicionar cartão"}</button>
+    ${existing?`<button class="btn danger full ghost" data-act="delcard" data-id="${existing.id}" style="margin-top:9px">Excluir cartão</button>`:""}
+  `;
+  openSheet(existing?"Editar cartão":"Novo cartão", body);
+}
+function saveCard(existing){
+  const q=id=>sbody.querySelector(id);
+  const name=q("#cName").value.trim();
+  const close=parseInt(q("#cClose").value); const pay=parseInt(q("#cPay").value);
+  if(!name){ toast("Dê um nome ao cartão.","err"); return; }
+  if(!(close>=1&&close<=31)){ toast("Dia de fechamento inválido.","err"); return; }
+  if(!(pay>=1&&pay<=31)){ toast("Dia de vencimento inválido.","err"); return; }
+  const card={ id:existing?existing.id:uid(), name, closingDay:close, paymentDay:pay, color:q("#fColor").value };
+  if(existing){ const i=state.cards.findIndex(x=>x.id===existing.id); state.cards[i]=card; }
+  else state.cards.push(card);
+  const isMain = !!(sbody.querySelector("#swCardMain") && sbody.querySelector("#swCardMain").classList.contains("on"));
+  if(isMain){ state.settings.defaultCardId = card.id; }
+  else if(state.settings.defaultCardId===card.id){ state.settings.defaultCardId = state.cards.filter(x=>x.id!==card.id)[0]?.id || null; }
+  if(!state.settings.defaultCardId && state.cards.length){ state.settings.defaultCardId = state.cards[0].id; }
+  save(); closeSheet(); render(); toast(existing?"Cartão salvo":"Cartão adicionado","ok");
+}
+
+/* ---------- FORM: CATEGORIA ---------- */
+function openCatForm(existing){
+  const c=existing||{emoji:"📦"};
+  const body=`
+    <div class="field"><label>Nome</label><input type="text" id="catName" value="${esc(c.name||"")}" placeholder="Ex.: Pets, Academia..."></div>
+    <div class="field"><label>Ícone (emoji)</label>${emojiPicker(c.emoji)}</div>
+    <button class="btn primary full" data-act="savecat" style="margin-top:6px">${existing?"Salvar":"Adicionar"}</button>
+    ${existing?`<button class="btn danger full ghost" data-act="delcat" data-id="${existing.id}" style="margin-top:9px">Excluir categoria</button>`:""}
+  `;
+  openSheet(existing?"Editar categoria":"Nova categoria", body);
+}
+function saveCat(existing){
+  const q=id=>sbody.querySelector(id);
+  const name=q("#catName").value.trim();
+  const emoji=(q("#fEmoji").value||"📦").trim()||"📦";
+  if(!name){ toast("Dê um nome à categoria.","err"); return; }
+  const cat={ id:existing?existing.id:uid(), name, emoji };
+  if(existing){ const i=state.categories.findIndex(x=>x.id===existing.id); state.categories[i]=cat; }
+  else state.categories.push(cat);
+  save(); closeSheet(); render(); toast(existing?"Categoria salva":"Categoria adicionada","ok");
+}
+
+/* ---------- FORM: BANCO ---------- */
+function openBankForm(existing){
+  const b=existing||{color:SWATCH_COLORS[(state.banks.length+3)%SWATCH_COLORS.length]};
+  const body=`
+    <div class="field"><label>Nome do banco/corretora</label><input type="text" id="bName" value="${esc(b.name||"")}" placeholder="Ex.: Nubank, XP, Tesouro..."></div>
+    <div class="field"><label>Cor</label>${swatchPicker(b.color)}</div>
+    <button class="btn primary full" data-act="savebank" style="margin-top:6px">${existing?"Salvar":"Adicionar banco"}</button>
+    ${existing?`<button class="btn danger full ghost" data-act="delbank" data-id="${existing.id}" style="margin-top:9px">Excluir banco e produtos</button>`:""}
+  `;
+  openSheet(existing?"Editar banco":"Novo banco", body);
+}
+function saveBank(existing){
+  const q=id=>sbody.querySelector(id);
+  const name=q("#bName").value.trim();
+  if(!name){ toast("Dê um nome ao banco.","err"); return; }
+  const bank={ id:existing?existing.id:uid(), name, color:q("#fColor").value };
+  if(existing){ const i=state.banks.findIndex(x=>x.id===existing.id); state.banks[i]=bank; }
+  else state.banks.push(bank);
+  save(); closeSheet(); render(); toast(existing?"Banco salvo":"Banco adicionado","ok");
+}
+
+/* ---------- FORM: PRODUTO ---------- */
+let prodForm={liq:false, aporte:true};
+function openProductForm(existing, bankId){
+  const p=existing||{};
+  prodForm={ liq:!!p.dailyLiquidity, aporte:p.acceptsContributions!==false };
+  const body=`
+    <div class="field"><label>Nome do produto</label><input type="text" id="pName" value="${esc(p.name||"")}" placeholder="Ex.: CDB 110%, Tesouro IPCA+ 2029..."></div>
+    <div class="row2">
+      <div class="field"><label>Rendimento (% do CDI)</label><input type="number" id="pCdi" inputmode="decimal" step="0.1" value="${p.cdiRate!=null?p.cdiRate:""}" placeholder="ex.: 110"></div>
+      <div class="field"><label>Vencimento (meses)</label><input type="number" id="pMonths" inputmode="numeric" value="${p.maturityMonths||""}" placeholder="opcional"></div>
+    </div>
+    <div class="field"><label>Data de vencimento</label><input type="date" id="pMatDate" value="${p.maturityDate||""}"><div class="hint">Opcional. Independente do período em meses acima.</div></div>
+
+    <div class="toggle" data-toggle="liq"><div><div class="tl">Liquidez diária</div><div class="td">Pode resgatar a qualquer momento</div></div><div class="switch ${prodForm.liq?'on':''}"></div></div>
+    <div class="toggle" data-toggle="aporte"><div><div class="tl">Aceita novos aportes</div></div><div class="switch ${prodForm.aporte?'on':''}"></div></div>
+
+    <div class="divline"></div>
+    <div class="field"><label>Investimento máximo (R$)</label><input type="text" id="pMax" class="money" inputmode="numeric" value="${moneyInitVal(p.maxInvestment)}" placeholder="opcional"><div class="hint">Deixe vazio se não houver limite.</div></div>
+    <div class="field"><label>Rendimento acima do limite (% do CDI)</label><input type="number" id="pCdiAbove" inputmode="decimal" step="0.1" value="${p.cdiRateAbove!=null?p.cdiRateAbove:""}" placeholder="ex.: 100"></div>
+
+    <button class="btn primary full" data-act="saveprod" data-bank="${bankId||(existing?existing.bankId:'')}" style="margin-top:6px">${existing?"Salvar":"Adicionar produto"}</button>
+    ${existing?`<button class="btn danger full ghost" data-act="delprod" data-id="${existing.id}" style="margin-top:9px">Excluir produto</button>`:""}
+  `;
+  // toggles específicos deste form
+  sbody.addEventListener("click", prodToggleHandler);
+  openSheet(existing?"Editar produto":"Novo produto", body);
+}
+function prodToggleHandler(e){
+  const tg=e.target.closest("[data-toggle]"); if(!tg) return;
+  const g=tg.dataset.toggle;
+  if(g==="liq") prodForm.liq=tg.querySelector(".switch").classList.contains("on");
+  if(g==="aporte") prodForm.aporte=tg.querySelector(".switch").classList.contains("on");
+}
+function saveProduct(existing, bankId){
+  const q=id=>sbody.querySelector(id);
+  const name=q("#pName").value.trim();
+  if(!name){ toast("Dê um nome ao produto.","err"); return; }
+  const num=v=>{ v=(v||"").toString().replace(",","."); return v.trim()===""?null:parseFloat(v); };
+  const prod={
+    id:existing?existing.id:uid(),
+    bankId: bankId||existing.bankId,
+    name,
+    cdiRate: num(q("#pCdi").value),
+    maturityMonths: num(q("#pMonths").value),
+    maturityDate: q("#pMatDate").value||null,
+    dailyLiquidity: prodForm.liq,
+    acceptsContributions: prodForm.aporte,
+    maxInvestment: moneyToNumOrNull(q("#pMax").value),
+    cdiRateAbove: num(q("#pCdiAbove").value),
+    balances: existing? existing.balances||{} : {}
+  };
+  if(existing){ const i=state.products.findIndex(x=>x.id===existing.id); state.products[i]=prod; }
+  else state.products.push(prod);
+  sbody.removeEventListener("click", prodToggleHandler);
+  save(); closeSheet(); render(); toast(existing?"Produto salvo":"Produto adicionado","ok");
+}
+
+/* ============================================================
+   AÇÕES (delegação global de clique)
+   ============================================================ */
+document.getElementById("fab").addEventListener("click",()=>openExpenseForm(null));
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]"); if(!t) return;
+  const a=t.dataset.act, id=t.dataset.id;
+  switch(a){
+    case "tab": state.ui.tab=t.dataset.tab; if(t.dataset.tab!=="mais") state.ui.more="root"; save(); render(); break;
+    case "goto": state.ui.tab=t.dataset.tab; save(); render(); break;
+    case "month": shiftMonth("month", parseInt(t.dataset.dir)); break;
+    case "investMonth": shiftMonth("investMonth", parseInt(t.dataset.dir)); break;
+    case "togglecard": state.ui.openCard = state.ui.openCard===id?null:id; render(); break;
+    case "more": state.ui.more=t.dataset.sub; render(); break;
+
+    case "addexp": case "saveexp": if(a==="saveexp"){saveExpense(currentEditing.expense);} else openExpenseForm(null); break;
+    case "editexp": openExpenseForm(state.expenses.find(x=>x.id===id)); break;
+    case "reccut": applyRecurrenceCut(currentEditing.expense || state.expenses.find(x=>x.id===id)); break;
+    case "delexp": if(confirm("Excluir este gasto?")){ state.expenses=state.expenses.filter(x=>x.id!==id); save(); closeSheet(); render(); toast("Gasto excluído","ok"); } break;
+
+    case "addcard": openCardForm(null); break;
+    case "savecard": saveCard(currentEditing.card); break;
+    case "editcard": openCardForm(state.cards.find(x=>x.id===id)); break;
+    case "delcard": if(confirm("Excluir cartão? Os gastos ligados a ele continuarão cadastrados.")){ state.cards=state.cards.filter(x=>x.id!==id); if(state.settings.defaultCardId===id){ state.settings.defaultCardId = state.cards.length? state.cards[0].id : null; } save(); closeSheet(); render(); toast("Cartão excluído","ok"); } break;
+
+    case "addcat": openCatForm(null); break;
+    case "savecat": saveCat(currentEditing.cat); break;
+    case "editcat": openCatForm(state.categories.find(x=>x.id===id)); break;
+    case "delcat":
+      if(state.categories.length<=1){ toast("Mantenha ao menos uma categoria.","err"); break; }
+      if(confirm("Excluir categoria?")){ state.categories=state.categories.filter(x=>x.id!==id); save(); closeSheet(); render(); toast("Categoria excluída","ok"); } break;
+
+    case "addbank": openBankForm(null); break;
+    case "savebank": saveBank(currentEditing.bank); break;
+    case "editbank": openBankForm(state.banks.find(x=>x.id===id)); break;
+    case "delbank": if(confirm("Excluir banco e todos os seus produtos?")){ state.products=state.products.filter(p=>p.bankId!==id); state.banks=state.banks.filter(x=>x.id!==id); save(); closeSheet(); render(); toast("Banco excluído","ok"); } break;
+
+    case "addprod": openProductForm(null, t.dataset.bank); break;
+    case "saveprod": saveProduct(currentEditing.prod, t.dataset.bank); break;
+    case "editprod": openProductForm(state.products.find(x=>x.id===id)); break;
+    case "delprod": if(confirm("Excluir este produto e seu histórico?")){ state.products=state.products.filter(x=>x.id!==id); save(); closeSheet(); render(); toast("Produto excluído","ok"); } break;
+
+    case "theme": state.settings.theme=t.dataset.v; save(); render(); break;
+    case "savecdi": { const v=parseFloat((sbody.querySelector("#cdiInput")||document.querySelector("#cdiInput")).value.replace(",",".")); if(v>=0){ state.settings.cdiAnnual=v; save(); render(); toast("CDI salvo","ok"); } break; }
+    case "saveincome": {
+      const sal=moneyToNum((V.querySelector("#salInput")||{}).value);
+      const hrs=parseFloat(((V.querySelector("#hrsInput")||{}).value||"").replace(",","."));
+      state.settings.netSalary = sal>0? clamp2(sal) : 0;
+      state.settings.hoursPerWeek = (hrs>0)? hrs : 0;
+      save(); render(); toast("Salário e horas salvos","ok"); break;
+    }
+
+    case "savecid": { const v=(V.querySelector("#driveCid")||{}).value||""; state.settings.driveClientId=v.trim(); save(); toast("Client ID salvo","ok"); break; }
+    case "drivebackup": driveBackup(); break;
+    case "driverestore": driveRestore(); break;
+    case "filebackup": fileBackup(); break;
+    case "filerestore": fileRestore(); break;
+    case "exportxlsx": exportSpreadsheet(); break;
+  }
+});
+
+/* guardamos o item em edição para os saves */
+const currentEditing={expense:null,card:null,cat:null,bank:null,prod:null};
+const _openExpenseForm=openExpenseForm; openExpenseForm=function(x){currentEditing.expense=x||null;_openExpenseForm(x);};
+const _openCardForm=openCardForm; openCardForm=function(x){currentEditing.card=x||null;_openCardForm(x);};
+const _openCatForm=openCatForm; openCatForm=function(x){currentEditing.cat=x||null;_openCatForm(x);};
+const _openBankForm=openBankForm; openBankForm=function(x){currentEditing.bank=x||null;_openBankForm(x);};
+const _openProductForm=openProductForm; openProductForm=function(x,b){currentEditing.prod=x||null;_openProductForm(x,b);};
+
+function shiftMonth(which, dir){
+  const {y,m}=ymToYM(state.ui[which]); const a=addMonthsYM(y,m,dir);
+  state.ui[which]=ymKey(a.y,a.m); save(); render();
+}
+
+/* máscara monetária: formata campos .money enquanto digita (centavos primeiro) */
+document.addEventListener("input",e=>{
+  const el=e.target;
+  if(el && el.classList && el.classList.contains("money")) maskMoneyEl(el);
+});
+
+/* atualização de saldo (input em investimentos) */
+V.addEventListener("change",e=>{
+  const inp=e.target.closest('[data-act="setbal"]'); if(!inp) return;
+  const pid=inp.dataset.id; const prod=state.products.find(p=>p.id===pid); if(!prod) return;
+  prod.balances=prod.balances||{};
+  if((inp.value||"").replace(/\D/g,"")===""){ delete prod.balances[state.ui.investMonth]; }
+  else { prod.balances[state.ui.investMonth]=clamp2(moneyToNum(inp.value)); }
+  save(); render();
+});
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function toast(msg,kind){
+  const root=document.getElementById("toast-root");
+  const el=document.createElement("div");
+  el.className="toast "+(kind||"");
+  el.textContent=msg; root.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add("show"));
+  setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>el.remove(),250); }, 2600);
+}
+
+/* ============================================================
+   BACKUP — arquivo local
+   ============================================================ */
+function exportData(){ const s=JSON.parse(JSON.stringify(state)); delete s.ui; return JSON.stringify(s,null,2); }
+function importData(json){
+  const obj=JSON.parse(json);
+  obj.ui=state.ui; // mantém navegação atual
+  obj.cards||=[]; obj.categories||=[]; obj.expenses||=[]; obj.banks||=[]; obj.products||=[];
+  obj.settings=Object.assign({cdiAnnual:14.9,driveClientId:state.settings.driveClientId,theme:state.settings.theme}, obj.settings||{});
+  state=obj; save(); render();
+}
+function fileBackup(){
+  const blob=new Blob([exportData()],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="controle-financeiro-"+todayStr()+".json";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast("Backup baixado","ok");
+}
+function fileRestore(){
+  const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+  inp.onchange=()=>{ const f=inp.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ try{ importData(r.result); toast("Dados restaurados","ok"); }catch(e){ toast("Arquivo inválido","err"); } };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ============================================================
+   BACKUP — Google Drive (GIS + REST)
+   ============================================================ */
+let gisLoaded=false, tokenClient=null, accessToken=null;
+function loadGIS(){
+  return new Promise((res,rej)=>{
+    if(gisLoaded&&window.google&&google.accounts) return res();
+    const s=document.createElement("script");
+    s.src="https://accounts.google.com/gsi/client"; s.async=true; s.defer=true;
+    s.onload=()=>{ gisLoaded=true; res(); };
+    s.onerror=()=>rej(new Error("Falha ao carregar Google. Verifique a conexão."));
+    document.head.appendChild(s);
+  });
+}
+function driveStatus(msg){ const el=V.querySelector("#drivestatus"); if(el) el.textContent=msg; }
+async function getToken(){
+  const cid=state.settings.driveClientId;
+  if(!cid){ toast("Configure o Client ID primeiro.","err"); throw new Error("no cid"); }
+  await loadGIS();
+  return new Promise((res,rej)=>{
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:cid, scope:DRIVE_SCOPE,
+      callback:(resp)=>{ if(resp&&resp.access_token){ accessToken=resp.access_token; res(accessToken); } else rej(new Error("Autorização cancelada.")); }
+    });
+    tokenClient.requestAccessToken({prompt: accessToken?"":"consent"});
+  });
+}
+async function driveFindFile(token){
+  const q=encodeURIComponent(`name='${DRIVE_FILENAME}' and trashed=false`);
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id,name,modifiedTime)`,
+    {headers:{Authorization:"Bearer "+token}});
+  if(!r.ok) throw new Error("Erro ao buscar no Drive ("+r.status+")");
+  const d=await r.json(); return (d.files&&d.files[0])||null;
+}
+async function driveBackup(){
+  try{
+    driveStatus("Conectando ao Google...");
+    const token=await getToken();
+    driveStatus("Enviando backup...");
+    const existing=await driveFindFile(token);
+    const content=exportData();
+    if(existing){
+      const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`,
+        {method:"PATCH", headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"}, body:content});
+      if(!r.ok) throw new Error("Falha no envio ("+r.status+")");
+    } else {
+      const boundary="-------cf"+Date.now();
+      const meta={name:DRIVE_FILENAME, mimeType:"application/json"};
+      const body=`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
+      const r=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        {method:"POST", headers:{Authorization:"Bearer "+token,"Content-Type":"multipart/related; boundary="+boundary}, body});
+      if(!r.ok) throw new Error("Falha ao criar arquivo ("+r.status+")");
+    }
+    driveStatus("✅ Backup enviado em "+new Date().toLocaleString("pt-BR"));
+    toast("Backup no Drive concluído","ok");
+  }catch(e){ driveStatus("⚠️ "+e.message); toast(e.message,"err"); }
+}
+async function driveRestore(){
+  try{
+    driveStatus("Conectando ao Google...");
+    const token=await getToken();
+    driveStatus("Procurando backup...");
+    const existing=await driveFindFile(token);
+    if(!existing){ driveStatus("Nenhum backup encontrado no Drive."); toast("Nada para restaurar","err"); return; }
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files/${existing.id}?alt=media`,{headers:{Authorization:"Bearer "+token}});
+    if(!r.ok) throw new Error("Erro ao baixar ("+r.status+")");
+    const txt=await r.text();
+    importData(txt);
+    driveStatus("✅ Restaurado de "+new Date(existing.modifiedTime).toLocaleString("pt-BR"));
+    toast("Dados restaurados do Drive","ok");
+  }catch(e){ driveStatus("⚠️ "+e.message); toast(e.message,"err"); }
+}
+
+/* ============================================================
+   EXPORTAR PLANILHA (.xlsx via SheetJS; fallback CSV)
+   ============================================================ */
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("cdn")); document.head.appendChild(s); }); }
+function buildSheetData(){
+  // Gastos cadastrados
+  const gastos=[["Data","Nome","Categoria","Forma","Cartão","Valor total","Parcelas","Recorrente","Detalhe recorrência"]];
+  for(const e of [...state.expenses].sort((a,b)=>a.date<b.date?1:-1)){
+    const cat=catById(e.categoryId), card=cardById(e.cardId);
+    gastos.push([ fmtDate(e.date), e.name, cat?cat.name:"", e.method==="pix"?"Pix":"Cartão",
+      card?card.name:"", e.amount, e.recurrence?1:(e.installments||1),
+      e.recurrence?"Sim":"Não", e.recurrence?recurrenceLabel(e.recurrence):"" ]);
+  }
+  // Lançamentos mensais (postings expandidos)
+  const today=new Date();
+  const recFrom=state.expenses.length? dateFromStr([...state.expenses].sort((a,b)=>a.date<b.date?-1:1)[0].date) : today;
+  const recTo=new Date(today.getFullYear(), today.getMonth()+24, today.getDate());
+  const posts=allPostings(recFrom, recTo).sort((a,b)=> a.eff<b.eff?-1:(a.eff>b.eff?1:0));
+  const incomeOn = hourlyRate()>0;
+  const lanc=[["Mês","Data efetiva","Descrição","Categoria","Forma","Cartão","Valor"].concat(incomeOn?["Horas trab."]:[])];
+  for(const p of posts){
+    const card=cardById(p.cardId), cat=catById(p.categoryId);
+    const row=[ p.month, fmtDate(p.eff), p.label, cat?cat.name:"", p.method==="pix"?"Pix":"Cartão", card?card.name:"", p.amount ];
+    if(incomeOn){ const hh=hoursOf(p.amount); row.push(hh!=null? Math.round(hh*100)/100 : ""); }
+    lanc.push(row);
+  }
+  // Investimentos (long format: produto x mês)
+  const allMonths=new Set();
+  for(const p of state.products) Object.keys(p.balances||{}).forEach(k=>allMonths.add(k));
+  const months=[...allMonths].sort();
+  const inv=[["Banco","Produto","%CDI","Liq.diária","Venc.(meses)","Data venc.","Aceita aporte","Invest. máx.","%CDI acima", ...months.map(monthLabelShort)]];
+  for(const p of state.products){
+    const bank=bankById(p.bankId);
+    inv.push([ bank?bank.name:"", p.name, p.cdiRate??"", p.dailyLiquidity?"Sim":"Não",
+      p.maturityMonths??"", p.maturityDate?fmtDate(p.maturityDate):"", p.acceptsContributions!==false?"Sim":"Não",
+      p.maxInvestment??"", p.cdiRateAbove??"",
+      ...months.map(m=> (p.balances&&p.balances[m]!=null)? p.balances[m] : "") ]);
+  }
+  // total por mês
+  if(months.length){ inv.push([]); inv.push(["","TOTAL","","","","","","","", ...months.map(m=>grandTotal(m))]); }
+  // Cartões
+  const cards=[["Cartão","Cor","Fechamento (dia)","Vencimento (dia)"]];
+  for(const c of state.cards) cards.push([c.name,c.color,c.closingDay,c.paymentDay]);
+  return {gastos,lanc,inv,cards};
+}
+async function exportSpreadsheet(){
+  const {gastos,lanc,inv,cards}=buildSheetData();
+  try{
+    if(!window.XLSX) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(gastos), "Gastos");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lanc), "Lançamentos mensais");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(inv), "Investimentos");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cards), "Cartões");
+    XLSX.writeFile(wb, "controle-financeiro-"+todayStr()+".xlsx");
+    toast("Planilha exportada","ok");
+  }catch(e){
+    // fallback CSV (zip simples não disponível -> baixa um CSV combinado)
+    const csv=[["== GASTOS =="],...gastos,[""],["== LANÇAMENTOS MENSAIS =="],...lanc,[""],["== INVESTIMENTOS =="],...inv,[""],["== CARTÕES =="],...cards]
+      .map(r=>r.map(c=>{ const s=String(c==null?"":c); return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(";")).join("\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob); const a=document.createElement("a");
+    a.href=url; a.download="controle-financeiro-"+todayStr()+".csv"; a.click(); URL.revokeObjectURL(url);
+    toast("Sem internet p/ xlsx — exportei CSV","ok");
+  }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadState(); render();
+</script>
+</body>
+</html>
